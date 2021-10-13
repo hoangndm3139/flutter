@@ -1,6 +1,10 @@
 import 'package:app/src/ui/app.dart';
 import 'package:app/src/ui/register_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:app/model/account_user.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -10,6 +14,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  AccountUser accountUser = AccountUser();
   String? _username;
   String? _password;
   late TextEditingController _usernameController;
@@ -90,16 +95,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       primary: Colors.white,
                       textStyle: const TextStyle(fontSize: 20),
                     ),
-                    onPressed: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => App()));
+                    onPressed: () async {
+                      try {
+                        UserCredential userCredential = await FirebaseAuth
+                            .instance
+                            .signInWithEmailAndPassword(
+                                email: '$_username', password: '$_password');
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) => App()));
+                      } on FirebaseAuthException catch (e) {
+                        if (e.code == 'user-not-found' &&
+                            e.code == 'wrong-password') {
+                          _onAlertFail(context);
+                        }
+                      }
                     },
                     child: const Text('Login'),
                   ),
                 ],
               ),
             ),
-            Padding(padding: EdgeInsets.all(5)),
+            const Padding(padding: EdgeInsets.all(5)),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: Stack(
@@ -139,6 +155,13 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-}
 
-class TextEdittingController {}
+  _onAlertFail(context) {
+    Alert(
+            context: context,
+            type: AlertType.error,
+            title: "Fail !!!",
+            desc: "Password is too weak.")
+        .show();
+  }
+}

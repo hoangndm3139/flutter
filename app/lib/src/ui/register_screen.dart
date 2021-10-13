@@ -1,4 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:app/model/account_user.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -8,16 +11,15 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  String? _registerUsername;
-  String? _registerPassword;
-  late TextEditingController _usernameController;
-  late TextEditingController _passwordController;
+  AccountUser accountUser = AccountUser();
+  late TextEditingController usernameController;
+  late TextEditingController passwordController;
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    _usernameController = TextEditingController();
-    _passwordController = TextEditingController();
+    usernameController = TextEditingController();
+    passwordController = TextEditingController();
   }
 
   @override
@@ -34,10 +36,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 35, 20, 15),
               child: TextField(
-                controller: _usernameController,
+                controller: usernameController,
                 onChanged: (text) => {
                   setState(() {
-                    _registerUsername = text;
+                    accountUser.registerUsername = text;
                   })
                 },
                 decoration: InputDecoration(
@@ -49,10 +51,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
               child: TextField(
-                controller: _passwordController,
+                controller: passwordController,
                 onChanged: (text) => {
                   setState(() {
-                    _registerPassword = text;
+                    accountUser.registerPassword = text;
                   })
                 },
                 obscureText: true,
@@ -85,7 +87,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       primary: Colors.white,
                       textStyle: const TextStyle(fontSize: 20),
                     ),
-                    onPressed: () {},
+                    onPressed: () async {
+                      try {
+                        UserCredential userCredential = await FirebaseAuth
+                            .instance
+                            .createUserWithEmailAndPassword(
+                                email: '${accountUser.registerUsername}',
+                                password: '${accountUser.registerPassword}');
+                        _onAlertComplete(context);
+                      } on FirebaseAuthException catch (e) {
+                        if (e.code == 'weak-password') {
+                          _onAlertFail(context);
+                        }
+                      }
+                    },
                     child: const Text('Register'),
                   ),
                 ],
@@ -95,5 +110,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       ),
     );
+  }
+
+  _onAlertFail(contetx) {
+    Alert(
+            context: context,
+            type: AlertType.error,
+            title: "Fail !!!",
+            desc: "Password is too weak.")
+        .show();
+  }
+
+  _onAlertComplete(context) {
+    Alert(
+      context: context,
+      type: AlertType.success,
+      title: "Complete !!!",
+    ).show();
   }
 }

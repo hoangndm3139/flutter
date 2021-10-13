@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:app/model/user.dart';
 import 'package:http/http.dart' as http;
 
 class ListMember extends StatefulWidget {
@@ -11,12 +10,12 @@ class ListMember extends StatefulWidget {
 }
 
 class _ListMemberState extends State<ListMember> {
+  List<User> users = [];
   Future fetchUser() async {
     final response =
         await http.get(Uri.parse('https://jsonplaceholder.typicode.com/users'));
 
     var jsonData = jsonDecode(response.body);
-    List<User> users = [];
     for (var u in jsonData) {
       User user = User(
           id: u["id"],
@@ -25,7 +24,6 @@ class _ListMemberState extends State<ListMember> {
           email: u["email"]);
       users.add(user);
     }
-    print(users[1].name);
     return users;
   }
 
@@ -41,16 +39,16 @@ class _ListMemberState extends State<ListMember> {
               future: fetchUser(),
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
-                  final users = snapshot.data;
                   return ListView.builder(
-                      itemCount: users?.length,
+                      itemCount: users.length,
                       itemBuilder: (context, i) {
-                    return ListTile(
-                      title: Text(users[i].name),
-                    );
-                  });
+                        return ListTile(
+                          title: Text(users[i].name ?? ""),
+                          leading: Text('${users[i].id}'),
+                        );
+                      });
                 } else {
-                  return Text("error");
+                  return const Text("error");
                 }
               }),
         ),
